@@ -1,0 +1,4 @@
+branches,current_density_uA_per_um,current_uA,device,file,measurement_kind,notes,tc_10_K,tc_50_K,tc_90_K,tc_midpoint_method,transition_width_10_90_K,width_um
+warming+cooling,4.999999999999999,49.99999999999999,C1,postpro/data/discord/C1_cooldown_I_50µA_1778496840.1709888.dat,4pts,Width from Discord discussion.,7.6088115967031555,7.807,8.698594541892016,max_gradient,1.08978294518886,10.0
+warming+cooling,2.4999999999999996,24.999999999999996,C1,postpro/data/discord/C1_cooldown_warmup_I_25µA.dat,4pts,Width from Discord discussion.,7.815842997735265,8.241,8.822209702965033,max_gradient,1.0063667052297678,10.0
+warming+cooling,4.999999999999999,99.99999999999999,D1,postpro/data/discord/D1_cooldown_warmup.dat,4pts,Width from Discord discussion.,7.565621876545508,7.884,8.399642086740004,max_gradient,0.8340202101944953,20.0
