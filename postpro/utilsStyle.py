@@ -35,7 +35,7 @@ def apply_style():
         "font.size": 18,
         "axes.labelsize": 24,
         "axes.titlesize": 25,
-        "legend.fontsize": 18,
+        "legend.fontsize": 20,
         "xtick.labelsize": 19,
         "ytick.labelsize": 19,
         "axes.linewidth": 1.5,

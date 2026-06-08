@@ -449,19 +449,20 @@ def legend_sphere(ax, x: float, y: float, r: float, color: str) -> None:
 
 
 def save_legend() -> None:
-    fig = plt.figure(figsize=(1.45, 1.10), dpi=100)
+    fig = plt.figure(figsize=(3.2, 0.55), dpi=100)
     ax = fig.add_axes([0, 0, 1, 1])
-    ax.set_xlim(0, 145)
-    ax.set_ylim(110, 0)
+    ax.set_xlim(0, 320)
+    ax.set_ylim(55, 0)
     ax.set_axis_off()
     fig.patch.set_facecolor(COLORS["light"])
     ax.set_facecolor(COLORS["light"])
-    legend_sphere(ax, 25, 24, 14, ELEMENT["Nb"])
-    ax.text(51, 30, "Nb", fontsize=20, va="center", color=COLORS["dark"], family="DejaVu Sans")
-    legend_sphere(ax, 25, 60, 11, ELEMENT["N"])
-    ax.text(51, 66, "N", fontsize=20, va="center", color=COLORS["dark"], family="DejaVu Sans")
-    legend_sphere(ax, 25, 92, 12, ELEMENT["Ni"])
-    ax.text(51, 98, "N", fontsize=20, va="center", color=COLORS["dark"], family="DejaVu Sans")
+    # Horizontal layout: Nb | N | Ni
+    legend_sphere(ax, 18, 28, 14, ELEMENT["Nb"])
+    ax.text(40, 30, "Nb", fontsize=20, va="center", color=COLORS["dark"], family="DejaVu Sans")
+    legend_sphere(ax, 118, 28, 11, ELEMENT["N"])
+    ax.text(138, 30, "N",  fontsize=20, va="center", color=COLORS["dark"], family="DejaVu Sans")
+    legend_sphere(ax, 218, 28, 12, ELEMENT["Ni"])
+    ax.text(238, 30, "N", fontsize=20, va="center", color=COLORS["dark"], family="DejaVu Sans")
     stem = ROOT / "molecule3d_split_legend_nb_n"
     fig.savefig(f"{stem}.png", dpi=100, facecolor=COLORS["light"])
     fig.savefig(f"{stem}_4x.png", dpi=400, facecolor=COLORS["light"])

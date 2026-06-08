@@ -587,7 +587,7 @@ def plot_tc_vs_pn(rows: list[dict[str, object]]) -> None:
     ]
 
     # Single-panel figure: crystal structures shown directly in the poster
-    fig, ax = plt.subplots(figsize=(9.5, 7.0))
+    fig, ax = plt.subplots(figsize=(9.5, 7.8))
 
     # --- 3 zones ---
     zone_bounds = [(0.0, 6.5, "R$_I$", "#3D7FD8"), (6.5, 14.0, "R$_{II}$", "#8B63D9"), (14.0, 22.0, "R$_{III}$", "#E84D8A")]
@@ -596,7 +596,7 @@ def plot_tc_vs_pn(rows: list[dict[str, object]]) -> None:
         if x1 < 22.0:
             ax.axvline(x1, color="0.75", linestyle="--", linewidth=0.9, zorder=1)
         ax.text((x0 + x1) / 2.0, 14.7, label, ha="center", va="center",
-                fontsize=14, fontweight="bold", color=color, alpha=0.7)
+                fontsize=22, fontweight="bold", color=color, alpha=0.7)
 
     for label, data in LITERATURE_TC.items():
         ax.plot(data["pn"], data["tc"], color=data["color"], alpha=0.9, label=label)
@@ -619,7 +619,7 @@ def plot_tc_vs_pn(rows: list[dict[str, object]]) -> None:
     style_ax(ax, xlabel=r"$P_{N_2}$ [%]", ylabel=r"$T_c$ [K]")
     ax.set_xlim(0, 22)
     ax.set_ylim(0, 15.5)
-    style_legend(ax, many_threshold=4, max_columns=4)
+    style_legend(ax, many_threshold=2, max_columns=3)
 
     finalize(fig, PLOT_DIR / "tc_vs_n2_fraction", show=False)
     plt.close(fig)
@@ -748,8 +748,8 @@ def plot_transition_and_bridge() -> None:
     r11 = normalized_resistance(m11.voltage)
     tc11 = transition_temperatures(m11, midpoint_method="max_gradient")
     branch_style = {
-        "warming": (PALETTE["blue"], "o", "Plain film — heating"),
-        "cooling": (PALETTE["green"], "s", "Plain film — cooling"),
+        "warming": (PALETTE["blue"], "o", "Plain film"),
+        "cooling": (PALETTE["blue"], "s", "_nolegend_"),
     }
     for name, sl in branch_slices(m11.temperature).items():
         color, marker, lbl = branch_style.get(name, (PALETTE["grey"], "o", name))
@@ -771,24 +771,17 @@ def plot_transition_and_bridge() -> None:
             ax.axvline(float(tc11[key]), color=color, linestyle="--",
                        linewidth=1.2, zorder=1)
 
-    # --- Bridge devices — 3 clearly distinct colours ---
-    # C1 @ 50 µA (5.0 µA/µm) → red; C1 @ 25 µA (2.5 µA/µm) → orange; D1 → green
+    # --- Bridge devices at matched current density (5.0 µA/µm each) ---
+    # C1 @ 50 µA = 5.0 µA/µm; D1 @ 100 µA = 5.0 µA/µm. Skip C1 @ 25 µA.
     for path in sorted(DISCORD_DIR.glob("[CD]1*.dat")):
+        if "25" in path.stem:        # skip C1 @ 25 µA — different current density
+            continue
         m = load_measurement(path)
         r_norm = normalized_resistance(m.voltage)
         lbl = device_label(path) or path.stem
         width = DEVICE_WIDTH_UM.get(lbl)
-        current_uA = m.current_a * 1e6 if m.current_a else math.nan
-        current_density = current_uA / width if width and current_uA else math.nan
-        if "25" in path.stem:        # C1 @ 25 µA → orange
-            color = "#FF7F0E"
-        elif lbl == "C1":            # C1 @ 50 µA → red
-            color = "#D62728"
-        else:                        # D1 → teal-green
-            color = "#2CA02C"
-        legend = f"{lbl}: {width:g} $\\mu$m"
-        if np.isfinite(current_density):
-            legend += f", {current_density:.1f} $\\mu$A/$\\mu$m"
+        color = "#D62728" if lbl == "C1" else "#2CA02C"
+        legend = f"Bridge (W = {width:g} $\\mu$m)"
         ax.scatter(m.temperature, r_norm, s=6, color=color, alpha=0.18, zorder=2)
         gt, gr = merged_low_pass_trace(m.temperature, r_norm, requested_window=17)
         ax.plot(gt, gr, color=color, linewidth=2.2, label=legend)
@@ -796,7 +789,7 @@ def plot_transition_and_bridge() -> None:
     style_ax(ax, xlabel="Sample temperature [K]", ylabel=r"$R/R_n$")
     ax.set_xlim(6.5, 12.5)
     ax.set_ylim(-0.05, 1.10)
-    style_legend(ax, many_threshold=2, max_columns=2, fontsize=22)
+    style_legend(ax, many_threshold=2, max_columns=2)
     finalize(fig, PLOT_DIR / "transition_and_bridge", show=False)
     plt.close(fig)
 
@@ -812,13 +805,15 @@ def plot_bridge_tc_reference(
     device_rows: list[dict[str, object]],
     plain_rows: list[dict[str, object]],
 ) -> None:
+    # Keep only measurements at the matched current density (5.0 µA/µm ±0.3)
     device_rows = [
         row for row in device_rows
         if finite(row.get("width_um")) and finite(row.get("tc_50_K"))
+        and abs(float(row.get("current_density_uA_per_um", math.nan)) - 5.0) < 0.3
     ]
     plain_film_tc = selected_plain_film_tc(plain_rows)
 
-    fig, ax_width = plt.subplots(1, 1, figsize=(7.0, 6.0))
+    fig, ax_width = plt.subplots(1, 1, figsize=(9.5, 6.0))
 
     seen_labels: set[str] = set()
     width_offsets: dict[float, int] = {}
@@ -852,33 +847,6 @@ def plot_bridge_tc_reference(
             color=color,
             ecolor=color,
             label=legend_label,
-        )
-        annotation_offset = (8, 0)
-        horizontal_alignment = "left"
-        vertical_alignment = "center"
-        if width < 12.0 and current_density < 3.0:
-            annotation_offset = (-10, 13)
-            horizontal_alignment = "right"
-            vertical_alignment = "bottom"
-        elif width < 12.0:
-            annotation_offset = (10, -10)
-            vertical_alignment = "top"
-
-        ax_width.annotate(
-            f"{row['device']}\n{float(row['current_uA']):.0f} $\\mu$A",
-            (x, tc),
-            textcoords="offset points",
-            xytext=annotation_offset,
-            ha=horizontal_alignment,
-            va=vertical_alignment,
-            fontsize=8.8,
-            linespacing=0.95,
-            bbox={
-                "boxstyle": "round,pad=0.12",
-                "facecolor": "white",
-                "edgecolor": "none",
-                "alpha": 0.78,
-            },
         )
 
     ax_width.axhline(
@@ -1268,13 +1236,14 @@ def plot_sc_field_diagram() -> None:
     ax_rt.axvspan(0,   Tc,  alpha=0.10, color="#3D7FD8")   # SC region
     ax_rt.axvspan(Tc, 1.0,  alpha=0.07, color="#888")       # Normal region
     ax_rt.axvline(Tc, color="#666", ls="--", lw=1.1)
-    # Tc label: below the x-axis (outside plot) to avoid overlap with the step
-    ax_rt.text(Tc, -0.16, r"$T_c$", ha="center", va="top", fontsize=12, color="#444",
-               clip_on=False)
-    ax_rt.text(Tc*0.38, 0.5, "Superconducting\n(Type I + II)", ha="center", va="center",
-               fontsize=9.5, color="#3D7FD8", style="italic")
+    import matplotlib.transforms as mtransforms
+    _blended = mtransforms.blended_transform_factory(ax_rt.transData, ax_rt.transAxes)
+    ax_rt.text(Tc, 1.03, r"$T_c$", ha="center", va="bottom", fontsize=12, color="#444",
+               transform=_blended, clip_on=False)
+    ax_rt.text(Tc*0.38, 0.5, "Superconducting", ha="center", va="center",
+               fontsize=19, color="#3D7FD8", style="italic")
     ax_rt.text((Tc+1)/2, 0.5, "Normal", ha="center", va="center",
-               fontsize=9.5, color="#777", style="italic")
+               fontsize=19, color="#777", style="italic")
     # Column markers
     # Column markers removed — no specification of where Type I/II are on the curve
     ax_rt.set_xlim(0, 1);  ax_rt.set_ylim(-0.08, 1.28)
@@ -1319,9 +1288,9 @@ def plot_sc_field_diagram() -> None:
                         ls="--", dashes=(6, 4), lw=1.35, zorder=11)
 
         # B arrow
-        ax.annotate("", xy=(-2.15, YMAX*0.75), xytext=(-2.15, YMAX*0.50),
+        ax.annotate("", xy=(-2.4, YMAX*0.75), xytext=(-2.4, YMAX*0.50),
                     arrowprops=dict(arrowstyle="->", color=color, lw=1.9, mutation_scale=15))
-        ax.text(-2.15, YMAX*0.88, r"$\vec{B}$", fontsize=15, color=color,
+        ax.text(-2.4, YMAX*0.88, r"$\vec{B}$", fontsize=15, color=color,
                 ha="center", va="bottom")
         # Condition label placed BELOW the axes (outside the field line area)
         ax.text(0.5, -0.07, label, ha="center", va="top", fontsize=11.5, color="#333",
@@ -1352,9 +1321,15 @@ def plot_sputtering_diagram() -> None:
     def poly(pts, fc, ec="#333", lw=1.1, zo=5, alpha=1.0):
         ax.add_patch(plt.Polygon(pts, fc=fc, ec=ec, lw=lw, zorder=zo, alpha=alpha))
 
-    # ── Chamber ──────────────────────────────────────────────────────────
-    ax.add_patch(plt.Rectangle((0.3, 0.3), 9.4, 11.4,
-                                fill=False, ec="#555", lw=1.5, ls="--", zorder=1))
+    # ── Chamber, with small inlet openings for Ar and N2 ────────────────
+    chamber_x0, chamber_x1 = 0.3, 9.7
+    chamber_y0, chamber_y1 = 0.3, 11.7
+    chamber_style = dict(color="#555", lw=1.5, ls="--", zorder=1)
+    ax.plot([chamber_x0, chamber_x1], [chamber_y1, chamber_y1], **chamber_style)
+    ax.plot([chamber_x0, chamber_x1], [chamber_y0, chamber_y0], **chamber_style)
+    ax.plot([chamber_x1, chamber_x1], [chamber_y0, chamber_y1], **chamber_style)
+    for y_start, y_end in ((chamber_y0, 7.58), (8.02, 8.78), (9.22, chamber_y1)):
+        ax.plot([chamber_x0, chamber_x0], [y_start, y_end], **chamber_style)
     ax.text(5.0, 11.88, "Vacuum chamber", ha="center",
             fontsize=FS-2, color="#555")
 
@@ -1369,11 +1344,8 @@ def plot_sputtering_diagram() -> None:
     ax.text(5.0, 10.25, "NbN thin film", ha="center", va="top",
             fontsize=FS-5, color="#37474F", zorder=7)
 
-    ANGLE = -28.0
-    CX, CY = 5.5, 3.6
-    th = math.radians(ANGLE)
-    pnx = -math.sin(th)   # ≈ +0.47  (toward substrate)
-    pny =  math.cos(th)   # ≈ +0.88
+    ANGLE = 0.0
+    CX, CY = 5.0, 3.6
 
     # ── Large plasma cone (triangle from target face → substrate) ─────────
     face_left  = rot([(-2.2, 0)], ANGLE, CX, CY)[0]
@@ -1381,7 +1353,7 @@ def plot_sputtering_diagram() -> None:
     sub_left  = (1.2,  10.5)
     sub_right = (8.8,  10.5)
     cone_pts = np.array([face_left, face_right, sub_right, sub_left])
-    poly(cone_pts, fc="#CE93D8", ec="none", zo=2, alpha=0.13)
+    poly(cone_pts, fc="#CE93D8", ec="#CE93D8", lw=1.0, zo=2, alpha=0.16)
 
     # ── Target (grey cathode) — face at y=0, body extends at y<0 (away from plasma) ──
     tgt = rot([(-2.2,0),(2.2,0),(2.2,-0.6),(-2.2,-0.6)], ANGLE, CX, CY)
@@ -1391,11 +1363,11 @@ def plot_sputtering_diagram() -> None:
             fontsize=FS-1, fontweight="bold", color="#1A2A2A",
             rotation=ANGLE, zorder=9)
 
-    # ── Magnets (N=red, S=grey) — behind target ───────────────────────────
-    NSEG = 5
+    # ── Magnets (N-S-N) — behind target ──────────────────────────────────
+    NSEG = 3
     seg_w = 4.4 / NSEG
-    mcols = ["#E53935" if i%2==0 else "#9E9E9E" for i in range(NSEG)]
-    mlbls = ["N" if i%2==0 else "S" for i in range(NSEG)]
+    mcols = ["#E53935", "#9E9E9E", "#E53935"]   # N – S – N
+    mlbls = ["N", "S", "N"]
     for i in range(NSEG):
         x0 = -2.2 + i*seg_w; x1 = x0 + seg_w
         pts = rot([(x0,-0.6),(x1,-0.6),(x1,-1.25),(x0,-1.25)], ANGLE, CX, CY)
@@ -1421,13 +1393,16 @@ def plot_sputtering_diagram() -> None:
     ax.text(gs_pt[0] + 0.15, gs_pt[1], "Ground\nshield", fontsize=FS-4, color="#37474F",
             ha="left", va="center", zorder=6)
 
-    # ── B-field arches: TWO symmetric groups (left & right of centre S-pole) ──
-    # Real magnetron has field looping from outer N poles down to centre S pole.
-    # This creates two separate trapping regions — one on each side.
+    # ── B-field arches: N→S arches from each outer N pole to the centre S pole ──
+    # With N-S-N arrangement: outer N poles at ±(3/4)*seg_w from centre, centre S at 0.
+    # Each arch is a semicircle centred midway between its N pole and the S centre.
+    # Traversal θ: 0→π sweeps right→left, so left arches (cx<0) go S→N and need
+    # a reversed arrow; right arches (cx>0) go N→S and are drawn correctly.
     ARCH_CLR = "#1A237E"
+    half = seg_w / 2   # half-distance between adjacent pole centres ≈ 0.733
     arch_groups = [
-        (-1.05, [0.55, 1.00]),   # left group: centred between left N and centre S
-        (+1.05, [0.55, 1.00]),   # right group (mirror)
+        (-half, [half * 0.52, half * 0.90]),   # left: between left-N and centre-S
+        (+half, [half * 0.52, half * 0.90]),   # right: mirror
     ]
     for cx_loc, radii in arch_groups:
         for r_loc in radii:
@@ -1436,7 +1411,7 @@ def plot_sputtering_diagram() -> None:
             yloc = r_loc * np.sin(theta)   # upper half = toward plasma
             pts_w = rot(list(zip(xloc, yloc)), ANGLE, CX, CY)
             ax.plot(pts_w[:, 0], pts_w[:, 1],
-                    color=ARCH_CLR, lw=1.9, ls="--", dashes=(5, 3), zorder=15)
+                    color=ARCH_CLR, lw=2.8, ls="--", dashes=(5.5, 3), zorder=15)
             # Arrow at arch peak — B goes from N pole to S pole above the surface.
             # Right arch (cx_loc>0): θ traversal goes N→S, so increasing-θ direction is correct.
             # Left arch (cx_loc<0): θ traversal goes S→N, so reverse the arrow.
@@ -1447,29 +1422,102 @@ def plot_sputtering_diagram() -> None:
             ax.annotate("", xy=(pts_w[mid, 0]+s*dx*0.5, pts_w[mid, 1]+s*dy*0.5),
                         xytext=(pts_w[mid, 0]-s*dx*0.5, pts_w[mid, 1]-s*dy*0.5),
                         arrowprops=dict(arrowstyle="-|>", color=ARCH_CLR,
-                                       lw=1.2, mutation_scale=9))
+                                       lw=1.9, mutation_scale=12))
 
-    arch_lbl = rot([(2.6, 1.8)], ANGLE, CX, CY)[0]
-    ax.text(arch_lbl[0]-0.1, arch_lbl[1], "B-field\ntraps", fontsize=FS-3,
-            color=ARCH_CLR, ha="right", va="center")
+    arch_lbl = rot([(2.55, 1.35)], ANGLE, CX, CY)[0]
+    ax.text(
+        arch_lbl[0] + 0.08,
+        arch_lbl[1],
+        "B-field\ntrap",
+        fontsize=FS - 3,
+        color=ARCH_CLR,
+        ha="left",
+        va="center",
+        bbox={"boxstyle": "round,pad=0.18", "facecolor": "white", "edgecolor": "none", "alpha": 0.78},
+        zorder=20,
+    )
 
-    # ── Sputtered atom dots ───────────────────────────────────────────────
-    rng = np.random.default_rng(42)
+    # ── Plasma and sputtered atom dots — schematic, deterministic, non-symmetric ──
+    # Purple dots represent the ionised Ar-rich plasma; blue dots represent
+    # sputtered Nb/NbN species travelling from the target toward the substrate.
     arrow_col = "#7B1FA2"
+    purple_points = np.array([
+        (3.02, 9.62), (4.18, 10.08), (6.04, 9.70), (7.55, 9.28),
+        (2.45, 8.72), (3.50, 8.55), (4.95, 8.92), (6.70, 8.52),
+        (2.70, 7.83), (4.58, 7.58), (5.72, 7.92), (7.18, 7.44),
+        (3.30, 6.82), (4.25, 6.35), (5.48, 6.62), (6.34, 6.08),
+        (3.76, 5.68), (5.05, 5.33), (6.78, 5.14), (4.58, 4.82),
+        (5.70, 4.54),
+    ])
+    purple_sizes = [4.1, 4.8, 3.8, 4.3, 4.6, 3.5, 4.0, 4.7, 3.7, 4.2, 3.5,
+                    4.3, 4.5, 3.7, 4.0, 4.8, 3.8, 4.4, 4.1, 3.6, 4.2]
+    for (px, py), size in zip(purple_points, purple_sizes):
+        ax.plot(px, py, "o", ms=size, color="#9C27B0", alpha=0.66, zorder=4)
 
-    # Dots for ionized Ar atoms in the plasma cone
-    for _ in range(18):
-        px = rng.uniform(2.5, 7.5)
-        py = rng.uniform(5.5, 9.8)
-        ax.plot(px, py, "o", ms=5, color="#9C27B0", alpha=0.7, zorder=4)
-    for _ in range(12):
-        px = rng.uniform(3.0, 7.0)
-        py = rng.uniform(6.0, 9.5)
-        ax.plot(px, py, "o", ms=4, color="#1565C0", alpha=0.65, zorder=4)
+    blue_points = np.array([
+        (3.55, 9.12), (5.30, 9.42), (6.96, 9.05),
+        (2.90, 8.28), (4.15, 8.04), (6.10, 8.12),
+        (3.48, 7.16), (5.05, 7.02), (6.58, 6.82),
+        (4.06, 6.05), (5.82, 5.72), (6.92, 5.62),
+    ])
+    blue_sizes = [3.4, 3.0, 3.6, 3.2, 3.4, 3.1, 3.5, 3.0, 3.4, 3.2, 3.5, 3.1]
+    for (px, py), size in zip(blue_points, blue_sizes):
+        ax.plot(px, py, "o", ms=size, color="#1565C0", alpha=0.72, zorder=5)
 
-    ax.text(7.5, 8.5, "Ar⁺ plasma", fontsize=FS-1, color="#6A1B9A",
-            ha="center", style="italic")
-    ax.text(7.8, 7.2, "Nb, NbN\natoms", fontsize=FS-2, color=arrow_col, ha="center")
+    label_box = {
+        "boxstyle": "round,pad=0.18",
+        "facecolor": "white",
+        "edgecolor": "none",
+        "alpha": 0.76,
+    }
+    ax.text(
+        0.78,
+        5.68,
+        "Ar⁺ plasma",
+        fontsize=FS - 5,
+        color="#8E24AA",
+        ha="left",
+        va="center",
+        bbox=label_box,
+        zorder=20,
+    )
+    ax.text(
+        0.78,
+        4.98,
+        "Nb/NbN atoms",
+        fontsize=FS - 5,
+        color="#1565C0",
+        ha="left",
+        va="center",
+        bbox=label_box,
+        zorder=20,
+    )
+    ax.annotate(
+        "",
+        xy=(2.55, 6.65),
+        xytext=(1.96, 5.78),
+        arrowprops=dict(
+            arrowstyle="-|>",
+            color="#8E24AA",
+            lw=1.25,
+            mutation_scale=10,
+            alpha=0.78,
+        ),
+        zorder=19,
+    )
+    ax.annotate(
+        "",
+        xy=(4.06, 6.05),
+        xytext=(1.96, 4.98),
+        arrowprops=dict(
+            arrowstyle="-|>",
+            color="#1565C0",
+            lw=1.25,
+            mutation_scale=10,
+            alpha=0.78,
+        ),
+        zorder=19,
+    )
 
     # ── RF power supply: outside chamber, cables from anode and cathode ──
     RF_CX, RF_TOP, RF_BOT = 10.55, 7.0, 5.0
@@ -1487,13 +1535,17 @@ def plot_sputtering_diagram() -> None:
     ax.text(RF_CX, RF_CY, "RF", ha="center", va="center",
             fontsize=FS + 2, fontweight="bold", color="#333", zorder=6)
 
-    # ── Gas inlets — labels outside chamber wall (x < 0.3) ───────────────
-    for label, y_pos, col in [("Ar", 9.0, "#E65100"), (r"N$_2$", 7.8, "#0277BD")]:
-        ax.annotate("", xy=(1.8, y_pos), xytext=(0.3, y_pos),
-                    arrowprops=dict(arrowstyle="-|>", color=col, lw=1.8,
-                                   mutation_scale=14))
-        ax.text(0.1, y_pos, label, ha="right", va="center",
-                fontsize=FS, fontweight="bold", color=col)
+    # ── Gas inlets — species labels, no partial-pressure annotation ──────
+    ax.annotate("", xy=(1.8, 9.0), xytext=(0.3, 9.0),
+                arrowprops=dict(arrowstyle="-|>", color="#E65100", lw=1.8,
+                               mutation_scale=14))
+    ax.text(0.1, 9.0, "Ar", ha="right", va="center",
+            fontsize=FS, fontweight="bold", color="#E65100")
+    ax.annotate("", xy=(1.8, 7.8), xytext=(0.3, 7.8),
+                arrowprops=dict(arrowstyle="-|>", color="#0277BD", lw=0.9,
+                               mutation_scale=9))
+    ax.text(0.1, 7.8, r"N$_2$", ha="right", va="center",
+            fontsize=FS, fontweight="bold", color="#0277BD")
 
     fig.tight_layout(pad=0.3)
     base = PLOT_DIR / "sputtering_diagram"

@@ -19,21 +19,20 @@
 #let panel(title, body) = block(
   width: 100%,
   fill: white,
-  stroke: (paint: rgb("#D0D4DC"), thickness: 0.8pt),
+  stroke: (paint: blue.lighten(35%), thickness: 0.9pt),
   radius: 4pt,
-  inset: (x: 11pt, top: 0pt, bottom: 13pt),
+  inset: 0pt,
 )[
   // Coloured title strip
   #block(
     width: 100%,
     fill: blue.lighten(88%),
-    inset: (x: 0pt, y: 8pt),
+    inset: (x: 11pt, y: 8pt),
     radius: (top-left: 4pt, top-right: 4pt),
   )[
-    #text(size: 28pt, weight: "bold", fill: blue)[#h(11pt)#title]
+    #text(size: 28pt, weight: "bold", fill: blue)[#title]
   ]
-  #v(4pt)
-  #body
+  #block(width: 100%, inset: (x: 11pt, bottom: 13pt))[#v(-8pt)#body]
 ]
 
 #let tag(color, body) = box(
@@ -41,7 +40,7 @@
   stroke: color.lighten(38%),
   radius: 3pt,
   inset: (x: 6pt, y: 3pt),
-)[#text(fill: color.darken(18%), weight: "bold", size: 23pt)[#body]]
+)[#text(fill: color.darken(18%), weight: "bold", size: 25pt)[#body]]
 
 #let metric(label, value, note, color: blue) = block(
   fill: color.lighten(84%),
@@ -50,15 +49,15 @@
   inset: 9pt,
   width: 100%,
 )[
-  #text(size: 23pt, fill: grey, weight: "bold")[#label]
+  #text(size: 25pt, fill: grey, weight: "bold")[#label]
   #linebreak()
   #text(size: 32pt, fill: color, weight: "bold")[#value]
   #linebreak()
-  #text(size: 23pt, fill: rgb("#44505C"))[#note]
+  #text(size: 25pt, fill: rgb("#44505C"))[#note]
 ]
 
-#let caption(body) = text(size: 23pt, fill: muted)[#body]
-#let smallnote(body) = text(size: 23pt, fill: muted)[#body]
+#let caption(body) = text(size: 25pt, fill: muted)[#body]
+#let smallnote(body) = text(size: 25pt, fill: muted)[#body]
 
 // ─── Typst-native schematics ──────────────────────────────────────────────────
 
@@ -91,13 +90,13 @@
 
   // Region labels
   content((2.5, 1.4), text(size: 8.5pt, fill: violet, weight: "bold")[Superconducting], anchor: "center")
-  content((6.8, 4.3), text(size: 8.5pt, fill: grey,   weight: "bold")[Normal], anchor: "center")
+  content((6.8, 4.3), text(size: 17pt, fill: grey,   weight: "bold")[Normal], anchor: "center")
 
   // ── Meissner / vortex sketches ──
   set-style(stroke: (paint: rgb("#555"), thickness: 1.0pt))
 
   // ── Type I: complete flux expulsion ──
-  content((1.8, -0.5), text(size: 8pt, fill: dark, weight: "bold")[Type I — Meissner], anchor: "center")
+  content((1.8, -0.5), text(size: 16pt, fill: dark, weight: "bold")[Type I — Meissner], anchor: "center")
   rect((0.7, -2.8), (2.9, -1.0), fill: blue.lighten(80%), stroke: (paint: blue.darken(10%), thickness: 1.1pt))
   content((1.8, -1.9), text(size: 7pt, fill: blue.darken(20%), weight: "bold")[B = 0], anchor: "center")
   line((0.05, -1.35), (0.7, -1.35), mark: (end: ">", size: .13))
@@ -113,7 +112,7 @@
   content((0.02, -2.0), text(size: 7pt)[$arrow.r B$], anchor: "east")
 
   // ── Type II: partial flux penetration (vortex state) ──
-  content((6.3, -0.5), text(size: 8pt, fill: dark, weight: "bold")[Type II — Vortex state], anchor: "center")
+  content((6.3, -0.5), text(size: 16pt, fill: dark, weight: "bold")[Type II — Vortex state], anchor: "center")
   rect((5.2, -2.8), (7.4, -1.0), fill: violet.lighten(80%), stroke: (paint: violet.darken(10%), thickness: 1.1pt))
   set-style(stroke: (paint: rgb("#555"), thickness: 1.0pt))
   line((4.55, -1.5),  (8.05, -1.5),  mark: (end: ">", size: .13))
@@ -134,91 +133,139 @@
   content((6.3, -3.5), text(size: 6.5pt, fill: muted)[vortex lattice], anchor: "center")
 })
 
-// RF Magnetron sputtering — tilted target head
-#let draw_sputtering = canvas(length: 1.12cm, {
+// RF Magnetron sputtering — ported from process_nbn.py / plot_sputtering_diagram
+#let draw_sputtering = canvas(length: 2.07cm, {
   import cdraw: *
 
-  // ── Vacuum chamber ──
-  set-style(stroke: (paint: grey, thickness: 0.9pt, dash: "dashed"))
-  rect((0.3, 0.3), (11.0, 11.2))
+  let arch_col   = rgb("#1A237E")
+  let pdot_col   = rgb("#BE70CB")   // #9C27B0 @ 0.66 opacity on white
+  let bdot_col   = rgb("#5790D2")   // #1565C0 @ 0.72 opacity on white
+  let cone_col   = rgb("#F7EEF9")   // #CE93D8 @ 0.16 opacity on white
 
-  // ── Substrate (anode) — horizontal at top, rotating ──
-  set-style(stroke: (paint: dark, thickness: 1.2pt, dash: "solid"))
-  rect((2.0, 10.0), (9.0, 10.6), fill: rgb("#C8DCEF"), stroke: (paint: dark, thickness: 1.2pt))
-  content((5.5, 10.95), text(size: 7.5pt, weight: "bold")[Substrate (anode) — rotating], anchor: "center")
-  // Rotation arrow
-  bezier((8.8, 10.3), (9.6, 10.2), (9.1, 10.55), (9.6, 10.4))
-  content((9.85, 10.3), text(size: 9pt)[↻], anchor: "center")
+  // ── Chamber: dashed rect, left wall has two gaps for gas inlets ──
+  let chs = (paint: rgb("#555"), thickness: 1.1pt, dash: "dashed")
+  line((0.3, 0.3),  (9.7, 0.3),  stroke: chs)
+  line((9.7, 0.3),  (9.7, 11.7), stroke: chs)
+  line((0.3, 11.7), (9.7, 11.7), stroke: chs)
+  line((0.3, 0.3),  (0.3, 7.58), stroke: chs)
+  line((0.3, 8.02), (0.3, 8.78), stroke: chs)
+  line((0.3, 9.22), (0.3, 11.7), stroke: chs)
 
-  // ── Sputtered Nb atoms — diagonal toward substrate ──
-  set-style(stroke: (paint: grey.darken(20%), thickness: 0.9pt))
-  line((4.5, 7.0), (3.5, 10.0), mark: (end: ">", size: .15))
-  line((5.2, 7.0), (5.5, 10.0), mark: (end: ">", size: .15))
-  line((5.9, 7.0), (7.5, 10.0), mark: (end: ">", size: .15))
-  content((6.5, 8.5), text(size: 7pt, fill: grey)[Nb+NbN], anchor: "west")
+  // ── Plasma cone FIRST (back layer) — trapezoid target face → substrate ──
+  line((2.8, 3.6), (7.2, 3.6), (8.8, 10.5), (1.2, 10.5), (2.8, 3.6),
+       fill: cone_col, stroke: none)
 
-  // ── Plasma (elongated along target face) ──
-  set-style(stroke: (paint: pink, thickness: 1.1pt))
-  circle((4.8, 6.3), radius: (1.75, 0.55),
-         fill: pink.lighten(82%), stroke: (paint: pink, thickness: 1.1pt))
-  content((4.8, 6.3), text(size: 7pt, fill: pink.darken(30%))[Ar#super[+] plasma], anchor: "center")
+  // ── Target (cathode) ──
+  rect((2.8, 3.0), (7.2, 3.6),
+       fill: rgb("#B0BEC5"), stroke: (paint: rgb("#37474F"), thickness: 1.4pt))
 
-  // ── Magnetron head — tilted ~25° ──
-  // Tilt: right end higher.  All four polygons are parallelograms shifted
-  // perpendicular to the face (normal direction ≈ (-0.42, 0.91)).
+  // ── N–S–N magnets (seg_w = 4.4/3 ≈ 1.467) ──
+  rect((2.8,   2.35), (4.267, 3.0), fill: rgb("#E53935"), stroke: (paint: rgb("#333"), thickness: 0.7pt))
+  rect((4.267, 2.35), (5.733, 3.0), fill: rgb("#9E9E9E"), stroke: (paint: rgb("#333"), thickness: 0.7pt))
+  rect((5.733, 2.35), (7.2,   3.0), fill: rgb("#E53935"), stroke: (paint: rgb("#333"), thickness: 0.7pt))
 
-  // Target face (cathode): front face at left, tilted
-  // Corners: TL=(2.8,4.2), TR=(6.8,6.0), BR=(7.0,5.4), BL=(3.0,3.6)
-  // Fill: steel blue
-  line((2.8,4.2),(6.8,6.0),(7.0,5.4),(3.0,3.6),(2.8,4.2),
-       fill: rgb("#7A8EBC"), stroke: (paint: dark, thickness: 1.1pt))
-  content((4.9, 4.85), text(size: 7pt, fill: white, weight: "bold")[Nb target (cathode)],
-          anchor: "center")
+  // ── Water cooling ──
+  rect((2.8, 1.6), (7.2, 2.35),
+       fill: rgb("#90CAF9"), stroke: (paint: rgb("#1565C0"), thickness: 0.9pt))
 
-  // Magnet row (N/S Halbach) — behind target
-  // Corners: same parallelogram shifted by (+0.2, -0.6)
-  // BL=(3.2,3.0), BR=(7.2,4.8), TR=(7.0,5.4) — shared with target back
-  let m1 = (3.0,3.6); let m2 = (7.0,5.4); let m3 = (7.2,4.8); let m4 = (3.2,3.0)
-  // N-pole segments (red)
-  line(m1, (4.3,4.2), (4.5,3.6), m4, m1, fill: rgb("#F5A0A0"), stroke: (paint: dark, thickness: 0.6pt))
-  line((4.3,4.2),(5.6,4.9),(5.8,4.3),(4.5,3.6),(4.3,4.2), fill: rgb("#A0C0F5"), stroke: (paint: dark, thickness: 0.6pt))
-  line((5.6,4.9),(6.8,5.55),(7.0,4.95),(5.8,4.3),(5.6,4.9), fill: rgb("#F5A0A0"), stroke: (paint: dark, thickness: 0.6pt))
-  line((6.8,5.55),m2,m3,(7.0,4.95),(6.8,5.55), fill: rgb("#A0C0F5"), stroke: (paint: dark, thickness: 0.6pt))
+  // ── Ground shields ──
+  rect((2.0, 1.6), (2.8, 4.0), fill: rgb("#78909C"), stroke: (paint: rgb("#37474F"), thickness: 1.1pt))
+  rect((7.2, 1.6), (8.0, 4.0), fill: rgb("#78909C"), stroke: (paint: rgb("#37474F"), thickness: 1.1pt))
+
+  // ── B-field arcs: bezier-approximated semicircles above target ──
+  // Centers: left=(4.267,3.6), right=(5.733,3.6); radii r1=0.381, r2=0.660; k=0.5523
+  set-style(stroke: (paint: arch_col, thickness: 2.0pt, dash: "dashed"))
+  // Left r1: (4.648,3.6)→peak(4.267,3.981)→(3.886,3.6)
+  bezier((4.648,3.6),   (4.267,3.981), (4.648,3.810), (4.477,3.981))
+  bezier((4.267,3.981), (3.886,3.6),   (4.057,3.981), (3.886,3.810))
+  // Left r2: (4.927,3.6)→peak(4.267,4.260)→(3.607,3.6)
+  bezier((4.927,3.6),   (4.267,4.260), (4.927,3.965), (4.632,4.260))
+  bezier((4.267,4.260), (3.607,3.6),   (3.902,4.260), (3.607,3.965))
+  // Right r1: (6.114,3.6)→peak(5.733,3.981)→(5.352,3.6)
+  bezier((6.114,3.6),   (5.733,3.981), (6.114,3.810), (5.943,3.981))
+  bezier((5.733,3.981), (5.352,3.6),   (5.523,3.981), (5.352,3.810))
+  // Right r2: (6.393,3.6)→peak(5.733,4.260)→(5.073,3.6)
+  bezier((6.393,3.6),   (5.733,4.260), (6.393,3.965), (6.098,4.260))
+  bezier((5.733,4.260), (5.073,3.6),   (5.368,4.260), (5.073,3.965))
+  set-style(stroke: (paint: arch_col, thickness: 1.4pt, dash: "solid"))
+  line((4.207,3.981), (4.327,3.981), mark: (end: ">", size: .10))
+  line((4.207,4.260), (4.327,4.260), mark: (end: ">", size: .10))
+  line((5.793,3.981), (5.673,3.981), mark: (end: ">", size: .10))
+  line((5.793,4.260), (5.673,4.260), mark: (end: ">", size: .10))
+
+  // ── Dots (drawn above cone, below substrate) ──
   set-style(stroke: none)
-  content((3.65,3.65), text(size: 6pt, weight: "bold")[N], anchor: "center")
-  content((5.05,4.4),  text(size: 6pt, weight: "bold")[S], anchor: "center")
-  content((6.35,5.15), text(size: 6pt, weight: "bold")[N], anchor: "center")
-  content((6.9,5.22),  text(size: 6pt, weight: "bold")[S], anchor: "center")
+  for pt in (
+    (3.02,9.62),(4.18,10.08),(6.04,9.70),(7.55,9.28),
+    (2.45,8.72),(3.50,8.55),(4.95,8.92),(6.70,8.52),
+    (2.70,7.83),(4.58,7.58),(5.72,7.92),(7.18,7.44),
+    (3.30,6.82),(4.25,6.35),(5.48,6.62),(6.34,6.08),
+    (3.76,5.68),(5.05,5.33),(6.78,5.14),(4.58,4.82),(5.70,4.54),
+  ) { circle(pt, radius: 0.05, fill: pdot_col, stroke: none) }
+  for pt in (
+    (3.55,9.12),(5.30,9.42),(6.96,9.05),
+    (2.90,8.28),(4.15,8.04),(6.10,8.12),
+    (3.48,7.16),(5.05,7.02),(6.58,6.82),
+    (4.06,6.05),(5.82,5.72),(6.92,5.62),
+  ) { circle(pt, radius: 0.04, fill: bdot_col, stroke: none) }
 
-  // Magnetic field arcs (confine electrons near target)
-  set-style(stroke: (paint: rgb("#7777CC"), thickness: 0.75pt, dash: "dotted"))
-  bezier((3.2,4.2),(3.8,5.0),(3.0,4.7),(3.6,5.0))
-  bezier((3.8,5.0),(4.4,4.3),(4.0,5.0),(4.2,4.7))
-  bezier((5.0,4.8),(5.6,5.6),(4.8,5.3),(5.4,5.6))
-  bezier((5.6,5.6),(6.2,4.9),(5.8,5.5),(6.0,5.2))
-  content((8.0,5.5), text(size: 6.5pt, fill: rgb("#5555AA"))[B trap], anchor: "west")
+  // ── NbN film then substrate (drawn last → on top of cone) ──
+  rect((1.2, 10.28), (8.8, 10.5),
+       fill: rgb("#90A4AE"), stroke: (paint: rgb("#455A64"), thickness: 0.8pt))
+  rect((1.2, 10.5), (8.8, 11.05),
+       fill: rgb("#4CAF50"), stroke: (paint: rgb("#1B5E20"), thickness: 1.5pt))
 
-  // Water cooling — behind magnets
-  line(m4,(3.2,3.0),(3.4,2.4),(7.4,4.2),(7.2,4.8),m3,m2, // outline only
-       fill: rgb("#A8D8F0"), stroke: (paint: dark, thickness: 1.0pt))
-  content((5.2, 3.65), text(size: 7pt)[🌊 water cooling], anchor: "center")
+  // ── RF supply box and cables ──
+  let wires = (paint: rgb("#555"), thickness: 1.2pt, dash: "solid")
+  line((8.8,10.83),  (10.55,10.83), stroke: wires)
+  line((10.55,10.83),(10.55,7.0),   stroke: wires)
+  line((8.0,3.6),    (10.55,3.6),   stroke: wires)
+  line((10.55,3.6),  (10.55,5.0),   stroke: wires)
+  rect((9.9,5.0), (11.2,7.0),
+       fill: rgb("#FFF9C4"), stroke: (paint: rgb("#555"), thickness: 1.2pt))
 
-  // ── RF supply connection — from target back to right ──
-  set-style(stroke: (paint: grey.darken(30%), thickness: 1.0pt, dash: "solid"))
-  line((7.0,5.4),(9.2,5.4))
-  line((9.2,5.4),(9.2,3.5))
-  content((9.5,4.5), text(size: 7pt)[RF\nsupply], anchor: "west")
-
-  // ── Gas inlets ──
-  set-style(stroke: (paint: grey, thickness: 0.85pt))
-  line((0.6, 8.5), (2.0, 8.0), mark: (end: ">", size: .14))
-  content((0.45, 8.8), text(size: 7pt)[Ar], anchor: "center")
-  line((0.6, 7.3), (2.0, 7.0), mark: (end: ">", size: .14))
-  content((0.4, 7.3), text(size: 7pt)[N#sub[2]], anchor: "center")
-
-  // ── Labels ──
+  // ── All text labels (drawn on top) ──
   set-style(stroke: none)
-  content((2.0, 1.9), text(size: 7pt, fill: dark)[Magnetron head (inclined)], anchor: "center")
+  content((5.0, 11.92), text(size: 24pt, fill: rgb("#555"))[Vacuum chamber], anchor: "south")
+  content((5.0, 10.775),
+    text(size: 28pt, fill: white, weight: "bold")[Substrate (anode) #sym.arrow.ccw],
+    anchor: "center")
+  content((5.0, 10.39),
+    text(size: 18pt, fill: rgb("#37474F"), weight: "bold")[NbN thin film],
+    anchor: "center")
+  content((5.0, 3.3),
+    text(size: 26pt, fill: rgb("#1A2A2A"), weight: "bold")[Nb target (cathode)],
+    anchor: "center")
+  content((3.533, 2.675), text(size: 20pt, fill: white, weight: "bold")[N], anchor: "center")
+  content((5.0,   2.675), text(size: 20pt, fill: white, weight: "bold")[S], anchor: "center")
+  content((6.467, 2.675), text(size: 20pt, fill: white, weight: "bold")[N], anchor: "center")
+  content((5.0, 1.975), text(size: 20pt, fill: rgb("#0D47A1"))[Water cooling], anchor: "center")
+  content((8.35, 2.8), text(size: 20pt, fill: rgb("#37474F"))[Ground\ shield], anchor: "west")
+  content((7.63, 4.95),
+    box(fill: none, inset: (x: 3pt, y: 2pt))[
+      #text(size: 22pt, fill: arch_col)[B-field\ trap]
+    ], anchor: "west")
+  content((10.55, 6.0), text(size: 28pt, fill: rgb("#333"), weight: "bold")[RF], anchor: "center")
+
+  // Plasma / atom labels with pointer arrows
+  content((0.78,5.68),
+    box(fill: none, inset: (x: 2pt, y: 1pt))[#text(size: 18pt, fill: rgb("#8E24AA"))[Ar#super[+] plasma]],
+    anchor: "west")
+  content((0.78,4.98),
+    box(fill: none, inset: (x: 2pt, y: 1pt))[#text(size: 18pt, fill: rgb("#1565C0"))[Nb/NbN atoms]],
+    anchor: "west")
+  line((1.96,5.78), (2.55,6.65), mark: (end: ">", size: .09),
+       stroke: (paint: rgb("#8E24AA"), thickness: 1.1pt))
+  line((1.96,4.98), (4.06,6.05), mark: (end: ">", size: .09),
+       stroke: (paint: rgb("#1565C0"), thickness: 1.1pt))
+
+  // ── Gas inlet arrows with species labels ──
+  line((0.3,9.0), (1.8,9.0), mark: (end: ">", size: .12),
+       stroke: (paint: rgb("#E65100"), thickness: 1.8pt))
+  content((0.25,9.0), text(size: 28pt, fill: rgb("#E65100"), weight: "bold")[Ar], anchor: "east")
+  line((0.3,7.8), (1.8,7.8), mark: (end: ">", size: .09),
+       stroke: (paint: rgb("#0277BD"), thickness: 0.9pt))
+  content((0.25,7.8), text(size: 28pt, fill: rgb("#0277BD"), weight: "bold")[N#sub[2]], anchor: "east")
 })
 
 // EBL resist-stack diagram — 4 steps
@@ -236,26 +283,26 @@
   // Serpentine flow: 1 →(right)→ 2 →(down)→ 3 →(left)→ 4
 
   // ─ STEP 1: initial resist stack (top-left) ─
-  content((2.0, 11.1), text(size: 23pt, weight: "bold")[1. Stack], anchor: "center")
+  content((2.0, 11.1), text(size: 25pt, weight: "bold")[1. Stack], anchor: "center")
   rect((0.2, 6.5), (3.8, 7.4), fill: si_col,    stroke: (paint: dark, thickness: 0.8pt))
-  content((2.0, 6.95), text(size: 23pt)[Si], anchor: "center")
+  content((2.0, 6.95), text(size: 25pt)[Si], anchor: "center")
   rect((0.2, 7.4), (3.8, 8.4), fill: copmma_c,  stroke: (paint: dark, thickness: 0.8pt))
-  content((2.0, 7.9),  text(size: 23pt)[co-PMMA], anchor: "center")
+  content((2.0, 7.9),  text(size: 25pt)[co-PMMA], anchor: "center")
   rect((0.2, 8.4), (3.8, 9.4), fill: pmma_c,    stroke: (paint: dark, thickness: 0.8pt))
-  content((2.0, 8.9),  text(size: 23pt)[PMMA], anchor: "center")
+  content((2.0, 8.9),  text(size: 25pt)[PMMA], anchor: "center")
 
   // ─ arrow 1 →(right)→ 2 ─
   set-style(stroke: (paint: dark, thickness: 1.2pt))
   line((4.0, 8.0), (4.9, 8.0), mark: (end: ">", size: .18))
 
   // ─ STEP 2: EBL exposure + development (top-right) ─
-  content((7.0, 11.1), text(size: 23pt, weight: "bold")[2. EBL + develop], anchor: "center")
+  content((7.0, 11.1), text(size: 25pt, weight: "bold")[2. EBL + develop], anchor: "center")
   set-style(stroke: (paint: blue, thickness: 1.3pt))
   line((7.0, 10.6), (7.0, 9.4), mark: (end: ">", size: .16))
-  content((7.0, 10.85), text(size: 23pt, fill: blue)[$e^-$], anchor: "center")
+  content((7.0, 10.72), text(size: 25pt, fill: blue)[$e^-$], anchor: "center")
   set-style(stroke: (paint: dark, thickness: 0.8pt))
   rect((5.2, 6.5), (8.8, 7.4), fill: si_col,   stroke: (paint: dark, thickness: 0.8pt))
-  content((7.0, 6.95), text(size: 23pt)[Si], anchor: "center")
+  content((7.0, 6.95), text(size: 25pt)[Si], anchor: "center")
   rect((5.2, 7.4), (6.3, 8.4), fill: copmma_c, stroke: (paint: dark, thickness: 0.8pt))
   rect((7.7, 7.4), (8.8, 8.4), fill: copmma_c, stroke: (paint: dark, thickness: 0.8pt))
   set-style(stroke: (paint: dark, thickness: 0.6pt, dash: "dashed"))
@@ -271,14 +318,14 @@
   line((7.0, 6.3), (7.0, 5.1), mark: (end: ">", size: .18))
 
   // ─ STEP 3: NbN deposition (bottom-right) ─
-  content((7.0, 4.6), text(size: 23pt, weight: "bold")[3. NbN dep.], anchor: "center")
+  content((7.0, 4.6), text(size: 25pt, weight: "bold")[3. NbN dep.], anchor: "center")
   set-style(stroke: (paint: grey, thickness: 0.8pt))
   for xd in (5.7, 6.3, 6.8, 7.3, 7.8, 8.3) {
     line((xd, 4.0), (xd, 3.3), mark: (end: ">", size: .12))
   }
   set-style(stroke: (paint: dark, thickness: 0.8pt))
   rect((5.2, 0.0), (8.8, 0.9), fill: si_col,   stroke: (paint: dark, thickness: 0.8pt))
-  content((7.0, 0.45), text(size: 23pt)[Si], anchor: "center")
+  content((7.0, 0.45), text(size: 25pt)[Si], anchor: "center")
   rect((5.2, 0.9), (6.3, 1.9), fill: copmma_c, stroke: (paint: dark, thickness: 0.8pt))
   rect((7.7, 0.9), (8.8, 1.9), fill: copmma_c, stroke: (paint: dark, thickness: 0.8pt))
   rect((5.2, 1.9), (6.5, 2.9), fill: pmma_c,   stroke: (paint: dark, thickness: 0.8pt))
@@ -286,28 +333,23 @@
   rect((5.2, 2.9), (6.5, 3.2), fill: nbn_c,    stroke: (paint: dark, thickness: 0.7pt))
   rect((7.5, 2.9), (8.8, 3.2), fill: nbn_c,    stroke: (paint: dark, thickness: 0.7pt))
   rect((6.3, 0.9), (7.7, 1.2), fill: nbn_c,    stroke: (paint: dark, thickness: 0.7pt))
-  content((7.0, 1.05), text(size: 23pt, fill: white)[NbN], anchor: "center")
+  content((7.0, 1.05), text(size: 19pt, fill: white)[NbN], anchor: "center")
 
   // ─ arrow 3 →(left)→ 4 ─
   set-style(stroke: (paint: dark, thickness: 1.2pt))
   line((5.0, 1.5), (4.1, 1.5), mark: (end: ">", size: .18))
 
   // ─ STEP 4: lift-off result (bottom-left) ─
-  content((2.0, 4.6), text(size: 23pt, weight: "bold")[4. Lift-off], anchor: "center")
+  content((2.0, 4.6), text(size: 25pt, weight: "bold")[4. Lift-off], anchor: "center")
   rect((0.2, 0.0), (3.8, 0.9), fill: si_col,  stroke: (paint: dark, thickness: 0.8pt))
-  content((2.0, 0.45), text(size: 23pt)[Si], anchor: "center")
+  content((2.0, 0.45), text(size: 25pt)[Si], anchor: "center")
   rect((1.3, 0.9), (2.7, 1.2), fill: nbn_c,   stroke: (paint: dark, thickness: 1.0pt))
-  content((2.0, 1.05), text(size: 23pt, fill: white)[NbN], anchor: "center")
+  content((2.0, 1.05), text(size: 19pt, fill: white)[NbN], anchor: "center")
   set-style(stroke: (paint: nbn_c, thickness: 0.7pt))
   line((2.0, 1.2), (2.0, 1.7), mark: (end: ">", size: .12))
-  content((2.0, 1.95), text(size: 23pt, fill: nbn_c)[bridge], anchor: "center")
-  content((3.5, 3.5), text(size: 23pt, fill: pink)[resist removed], anchor: "east")
+  content((2.0, 1.95), text(size: 25pt, fill: nbn_c)[bridge], anchor: "center")
+  content((3.5, 3.5), text(size: 25pt, fill: pink)[resist removed], anchor: "east")
 
-  // Layer colour legend (below bottom-right panel)
-  content((8.7, -0.5), text(size: 23pt, fill: si_col.darken(40%))[▪ Si],        anchor: "east")
-  content((8.7, -0.9), text(size: 23pt, fill: copmma_c.darken(40%))[▪ co-PMMA], anchor: "east")
-  content((8.7, -1.3), text(size: 23pt, fill: pmma_c.darken(40%))[▪ PMMA],      anchor: "east")
-  content((8.7, -1.7), text(size: 23pt, fill: nbn_c.darken(10%))[▪ NbN],        anchor: "east")
 })
 
 // ─── Poster layout ────────────────────────────────────────────────────────────
@@ -316,7 +358,7 @@
 #grid(
   columns: (1.2fr, 5.7fr, 1.2fr),
   gutter: 9mm,
-  align(left + horizon)[#image("../researchproposal/ulgfsa.svg", width: 160mm)],
+  align(left + horizon)[#image("../researchproposal/ulgfsa_en.svg", width: 160mm)],
   align(center)[
     #text(size: 56pt, weight: "bold", fill: blue)[Growth Optimisation of Superconducting NbN]
     #linebreak()
@@ -329,216 +371,235 @@
   align(right + horizon)[#image("../researchproposal/epnm.png", width: 136mm)],
 )
 
-#v(8mm)
+#v(3mm)
 
-// ── Research question — prominent centred box ──
+// ── Abstract ──
 #block(
   width: 100%,
   fill: blue.lighten(88%),
   stroke: (paint: blue, thickness: 1.5pt),
   radius: 6pt,
-  inset: (x: 22pt, y: 18pt),
+  inset: (x: 75pt, top: 12pt, bottom: 20pt),
 )[
   #align(center)[
-    #text(size: 38pt, weight: "bold", fill: blue)[Research Question]
-    #v(6pt)
-    #text(size: 32pt, fill: dark)[
-      What N#sub[2] fraction in reactive RF sputtering maximises $T_c$ of NbN thin films,
-      and does EBL nano-patterning preserve superconductivity in finite-width bridges?
-    ]
-    #v(8pt)
-    #text(size: 26pt, fill: muted)[
-      *Answer:* $P_(N_2)=10%$ gives plain-film $T_c=10.99$ K · EBL-patterned bridges remain supra-conducting at ~8 K · $Delta T_c approx 3$ K (confinement + scattering, not a defect)
-    ]
+    #text(size: 38pt, weight: "bold", fill: blue)[Abstract]
+  ]
+  #v(6pt)
+  #text(size: 28pt, fill: dark)[
+    NbN thin films are a key material for superconducting nanowire single-photon detectors (SNSPDs) and quantum circuits, with $T_c$ up to 17.3~K [1]. In reactive RF magnetron sputtering, the N#sub[2] partial pressure $P_(N_2)$ governs stoichiometry across three structural zones (Kalal et al. 2021). Here, 50 nm NbN films are deposited on Si substrates at varied $P_(N_2)$ (2.5–15 %) and their resistive transitions measured by 4-point transport. This work identifies the optimal $P_(N_2)$ for maximum reproducible $T_c$ and characterises the effect of EBL micro-patterning on finite-width NbN bridges.
   ]
 ]
 
-#v(8mm)
+#v(3mm)
 
 // ══════════════════════════════════════════════════════════════════════════════
-// 2-COLUMN LAYOUT — nested sub-grids to fill white space
-// Left = RF process & growth study  |  Right = SC physics + bridge study
+// 2-COLUMN LAYOUT
+// Left = Introduction, Methods, RF process & growth  |  Right = SC physics + bridges
 // ══════════════════════════════════════════════════════════════════════════════
 #grid(
   columns: (1fr, 1fr),
   gutter: 14mm,
 
-  // ══ LEFT — RF sputtering, deposition rate, Tc study ═══════════════════════
+  // ══ LEFT ══════════════════════════════════════════════════════════════════
   [
-    // ── Row 1: Introduction + Methods side-by-side ──
-    #grid(
-      columns: (1fr, 1fr),
-      gutter: 7mm,
-      [#panel([1. Introduction])[
-        #set par(leading: 0.85em)
-        #v(4pt)
-        - NbN: *Type II superconductor*, $T_c$ up to 17.3 K (Keskar 1971) — exceeds pure Nb (~8 K)
-        #v(6pt)
-        - $T_c$ tuned by N#sub[2] fraction: $P_(N_2)=100 F_(N_2)\/(F_("Ar")+F_(N_2))$
-        #v(6pt)
-        - Three structural zones R#sub[I/II/III] give distinct $T_c$ — Kalal et al. 2021
-        #v(6pt)
-        - *Goal 1:* find optimal $P_(N_2)$ for highest reproducible $T_c$
-        #v(6pt)
-        - *Goal 2:* verify EBL-patterned bridges stay superconducting after nano-patterning
-        #v(4pt)
-      ]],
-      [#panel([2. Methods])[
-        #v(4pt)
-        #tag(blue)[Deposition] 50 nm NbN deposited by reactive RF magnetron sputtering (210 W, $10^(-8)$ Torr, 20 sccm), $P_(N_2)$ varied 2–20 %
-        #v(10pt)
-        #tag(violet)[Transport] 4-point $R(T)$ in cryostat; $T_c$ = midpoint of resistive transition (max $|"dR"/"dT"|$); onset (90 %) and offset (10 %) provide two alternative $T_c$ definitions
-        #v(10pt)
-        #tag(pink)[EBL] PMMA/co-PMMA bilayer patterned by e-beam lithography (Raith Pioneer Two); NbN deposited and lifted off → bridges C1 (10 µm) and D1 (20 µm)
-        #v(4pt)
-      ]],
-    )
-    #v(8mm)
-    // ── Row 2: RF Sputtering ──
-    #panel([3. Reactive RF Sputtering])[
-      #align(center)[#image("../plot/sputtering_diagram.pdf", width: 94%)]
-      #caption([Inclined magnetron: N/S magnets trap electrons (B-field arches), Ar#super[+] sputters Nb → NbN on rotating anode. RF supply connected via anode and cathode cables.])
+    #panel([1. Introduction])[
+      #set par(leading: 0.85em)
+      #v(4pt)
+      - NbN: *Type II superconductor*, $T_c$ up to 17.3~K (Keskar 1971).
+      #v(4pt)
+      - $T_c$ tuned by the nitrogen gas fraction: #text(size: 24pt, fill: dark)[$P_(N_2)$ [%] = 100 × N#sub[2] / total gas flow]
+      #v(6pt)
+      - Three crystalline structure R#sub[I/II/III] give distinct $T_c$ (Kalal et al. 2021)
+      #v(6pt)
+      - *Goal 1:* find optimal $P_(N_2)$ for highest reproducible $T_c$
+      #v(6pt)
+      - *Goal 2:* verify EBL-patterned bridges remain superconducting after micro-patterning
+      #v(4pt)
     ]
-    #v(8mm)
-    // ── Row 3: Deposition Rate + Tc vs PN2 side-by-side ──
-    #grid(
-      columns: (1fr, 1fr),
-      gutter: 7mm,
-      [
-        #panel([4. Deposition Rate vs $P_(N_2)$])[
-          #align(center)[#image("../plot/deposition_rate_n2_fraction.pdf", width: 98%)]
-          #caption([Higher $P_(N_2)$ dilutes Ar, reducing plasma density and Ar#super[+] mean free path → fewer sputtering events → lower deposition rate.])
-        ]
-        #v(8mm)
-        #block(
-          width: 100%,
-          fill: amber.lighten(88%),
-          stroke: (paint: amber.lighten(55%), thickness: 0.7pt),
-          radius: 4pt,
-          inset: (x: 11pt, y: 10pt),
-        )[
-          #text(size: 20pt, fill: dark)[
-            *Acknowledgements* — *Cyril Delforge* and *Abhishek Naik* provided daily supervision and prepared several NbN samples for this study. *Julia Baumgarten* contributed the C1 & D1 bridge transport measurements and several $T_c$ vs $P_(N_2)$ data points. *Nicolas Lejeune* retrieved all additional $T_c$ measurements from the NbN samples used in this study.
+    #v(3mm)
+    #panel([2. Methods])[
+      #v(4pt)
+      #tag(blue)[Deposition] 50 nm NbN deposited by reactive RF magnetron sputtering (210 W, $10^(-8)$ Torr, 20 sccm), $P_(N_2)$ varied 2.5–15 %
+      #v(7pt)
+      #tag(violet)[Transport] 4-point $R(T)$ in cryostat, $T_c$ = midpoint of resistive transition (max $|"dR"/"dT"|$), onset (90 %) and offset (10 %) are two alternative thresholds
+      #v(7pt)
+      #tag(pink)[EBL] PMMA/co-PMMA bilayer patterned by e-beam lithography (Raith Pioneer Two), NbN deposited and lifted off → bridges 10 and 20 µm.
+      #v(4pt)
+    ]
+    #v(3mm)
+    // ── RF Sputtering ──
+    #panel([3. Reactive RF Sputtering])[
+      #align(center)[#draw_sputtering]
+    ]
+    #v(3mm)
+    // ── Row 3: Deposition Rate — text left, plot right ──
+    #panel([4. Deposition Rate vs $P_(N_2)$])[
+      #grid(
+        columns: (1fr, 2fr),
+        gutter: 6mm,
+        align(horizon)[
+          #text(size: 25pt, fill: muted)[
+            - Higher $P_(N_2)$ dilutes Ar in the plasma.
+            #v(8mm)
+            - Lower Ar#super[+] density reduces target bombardment.
+            #v(8mm)
+            - Fewer sputtering events decrease the deposition rate.
           ]
-        ]
-      ],
-      [#panel([5. $T_c$ vs $P_(N_2)$ — Growth results])[
-        #align(center)[#image("../plot/tc_vs_n2_fraction.pdf", width: 98%)]
-        #caption([$T_c$ peaks in zone *R#sub[II]* (#sym.delta\u{2011}NbN) at $P_(N_2)=10%$ — balance between N incorporation and over-nitridation. $T_c$ defined as midpoint (max $|"dR"/"dT"|$); error bars span onset (90 %) to offset (10 %). Results agree qualitatively with Kalal et al. 2021.])
-        #v(3pt)
-        #grid(
-          columns: (1fr, 1fr, 1fr, 1fr, auto),
-          rows: (36mm, auto),
-          gutter: (1mm, 2pt),
-          align(center + horizon)[#image("../molecule3d_split_pure_nb_4x.png", height: 33mm)],
-          align(center + horizon)[#image("../molecule3d_split_r1_4x.png",      height: 33mm)],
-          align(center + horizon)[#image("../molecule3d_split_r2_4x.png",      height: 33mm)],
-          align(center + horizon)[#image("../molecule3d_split_r3_4x.png",      height: 33mm)],
-          [],
-          align(center)[#caption([Nb])],
-          align(center)[#caption([R#sub[I]])],
-          align(center)[#caption([R#sub[II]])],
-          align(center)[#caption([R#sub[III]])],
-          align(center + horizon)[#image("../molecule3d_split_legend_nb_n_4x.png", height: 13mm)],
-        )
-      ]],
-    )
+        ],
+        align(center + horizon)[#image("../plot/deposition_rate_n2_fraction.pdf", width: 100%)],
+      )
+    ]
+    #v(3mm)
+    // ── Row 4: Tc vs PN2 — plot left, text right ──
+    #panel([5. $T_c$ vs $P_(N_2)$: Growth results])[
+      #grid(
+        columns: (1.6fr, 1fr),
+        gutter: 6mm,
+        // Left: Tc vs PN2 plot only
+        align(center + horizon)[#image("../plot/tc_vs_n2_fraction.pdf", width: 100%)],
+        // Right: bullets, then 2×2 crystal images below
+        [
+          #text(size: 25pt, fill: muted)[
+            - Peak at $P_(N_2)=10%$ in zone *R#sub[II]* (δ-NbN, cubic rock-salt).
+            #v(3mm)
+            - Zone R#sub[I] is nitrogen-poor, zone R#sub[III] is over-nitrided, both lowering $T_c$.
+            #v(3mm)
+            - Error bars span 90 % to 10 % thresholds. Trend agrees with Kalal et al. 2021.
+          ]
+          #v(3mm)
+          #grid(
+            columns: (1fr, 1fr, 1fr, 1fr),
+            gutter: (2mm, 3pt),
+            align(center)[#image("../molecule3d_split_pure_nb_4x.png", height: 37mm)],
+            align(center)[#image("../molecule3d_split_r1_4x.png",      height: 37mm)],
+            align(center)[#image("../molecule3d_split_r2_4x.png",      height: 37mm)],
+            align(center)[#image("../molecule3d_split_r3_4x.png",      height: 37mm)],
+            align(center)[#caption([Nb])],
+            align(center)[#caption([β-Nb#sub[2]N])],
+            align(center)[#caption([δ-NbN])],
+            align(center)[#caption([ε-NbN])],
+          )
+          #v(2mm)
+          #align(center)[#image("../molecule3d_split_legend_nb_n_4x.png", width: 40%)]
+          #v(3mm)
+          #caption([Crystal structures from Kalal et al. *[3]* (rendered and upscaled).])
+        ],
+      )
+    ]
   ],
 
   // ══ RIGHT — SC physics, bridge fabrication, results ═══════════════════════
   [
     // ── Row 1: SC field diagram ──
-    #panel([6. Superconducting Transition — Type I vs Type II])[
+    #panel([6. Superconducting Transition: Type I vs Type II])[
       #align(center)[#image("../plot/sc_field_diagram.pdf", width: 90%)]
       #caption([
-        *Normal* ($T>T_c$): B passes through. *Type I* (Pb): Meissner — $B=0$ inside. *Type II* (NbN): vortex lattice above $H_(c 1)$; $R=0$ until $H_(c 2)$.
+        *Type I* (Pb): Meissner, $B=0$ inside. \
+        *Type II* (NbN): vortex lattice above $H_(c 1)$, $R=0$ until $H_(c 2)$. \
+        *Normal* ($T>T_c$): B passes through. 
       ])
     ]
-    #v(8mm)
-    // ── Row 2: R(T) + EBL side-by-side ──
-    #grid(
-      columns: (1fr, 1fr),
-      gutter: 7mm,
-      [#panel([7. R(T) — Plain Film \& Bridges])[
-        #align(center)[#image("../plot/transition_and_bridge.pdf", width: 98%)]
-        #caption([
-          4-point geometry. Bridges transition ~3 K below the plain film. The $Delta T_c$ is *width-independent* (C1 ≈ D1): drop reflects lithography transfer (edge roughness, contacts, EBL scattering).
-        ])
-      ]],
-      [#panel([8. EBL — Bridge Fabrication])[
-        #align(center)[#draw_ebl]
-        #caption([PMMA/co-PMMA bilayer; co-PMMA undercut → clean NbN lift-off. C1 (10 µm) and D1 (20 µm).])
-      ]],
-    )
-    #v(8mm)
-    // ── Row 3: Bridge Benchmark + Conclusions side-by-side ──
-    #grid(
-      columns: (1fr, 1fr),
-      gutter: 7mm,
-      [#panel([9. Finite-Width Benchmark])[
-        #align(center)[#image("../plot/bridge_tc_reference.pdf", width: 98%)]
-        #v(3mm)
-        #table(
-          columns: (auto, auto, auto, auto),
-          stroke: (paint: border, thickness: 0.6pt),
-          inset: 4pt,
-          align: center,
-          table.header[*Dev.*][*W*][$T_c$][$Delta T_c$],
-          [C1], [10 µm], [~8.1 K], [−2.9 K],
-          [D1], [20 µm], [~8.0 K], [−3.0 K],
-          [Film], [—], [10.99 K], [ref],
-        )
-        #v(3mm)
-        #grid(
-          columns: (1fr, 1fr),
-          gutter: 7mm,
-          [
-            #align(center)[#image("images/gds_C1.png", width: 90%)]
-            #align(center)[#caption([GDS — C1 (W = 10 µm)])]
-          ],
-          [
-            #align(center)[#image("images/gds_D1.png", width: 90%)]
-            #align(center)[#caption([GDS — D1 (W = 20 µm)])]
-          ],
-        )
-        #v(3pt)
-        #caption([Both bridges SC at ~8 K. Width-independent $Delta T_c approx 3$ K → lithography transfer effects.])
-      ]],
-      [
-        #panel([Conclusions])[
-          #set par(leading: 0.65em)
-          #text(size: 23pt)[A nitrogen fraction of $P_(N_2) approx 10%$ in reactive RF magnetron sputtering yields an optimal $T_c = 10.99$ K (zone R#sub[II], #sym.delta\u{2011}NbN phase), confirming process reproducibility.]
-          #v(5pt)
-          #text(size: 23pt)[Four-point transport measurements on EBL-patterned bridges show that nano-patterning preserves the superconducting properties, with both C1 and D1 remaining superconducting at ~8 K.]
-          #v(5pt)
-          #text(size: 23pt)[The $Delta T_c approx 3$ K reduction is attributed to electronic confinement and the higher interface-to-volume ratio of narrow bridges, which enhances electron scattering.]
-          #v(5pt)
-          #text(size: 23pt)[The $T_c$–thickness relation is well established (cf. Gavaler *[5]*):
-          $ T_c (d) = T_(c 0) lr((1 - d_c / d)) $
-          with $T_(c 0)$ the bulk limit and $d_c$ the critical thickness below which superconductivity is suppressed.]
-        ]
-        #v(2mm)
-        #panel([References])[
-          #text(size: 23pt, fill: muted)[
-            *[1]* Keskar et al., _Jpn. J. Appl. Phys._ *10* (1971) #linebreak()
-            *[2]* Sugimoto & Motohiro, _Vacuum_ *93* (2013) #linebreak()
-            *[3]* Kalal et al., _J. Alloys Compd._ *851* (2021) #linebreak()
-            *[4]* Glowacka et al., _arXiv:1401.2276_ (2014) #linebreak()
-            *[5]* Gavaler et al., _Physica_ *55* (1971)
+    #v(3mm)
+    // ── Row 2: R(T) plot | EBL diagram in one shared block ──
+    #panel([7. R(T): Plain Film \& Bridges])[
+      #grid(
+        columns: (1fr, 1fr),
+        gutter: 7mm,
+        [
+          #align(center)[#image("../plot/transition_and_bridge.pdf", width: 98%)]
+          #v(4pt)
+          #set list(indent: 4pt, body-indent: 6pt)
+          - 4-point geometry: current injected at outer contacts, voltage sensed at inner contacts (contact resistance eliminated)
+        ],
+        [
+          #align(center)[#draw_ebl]
+          #v(4pt)
+          #set list(indent: 4pt, body-indent: 6pt)
+          - PMMA/co-PMMA bilayer deposited by *spin coating* prior to e-beam exposure
+        ],
+      )
+    ]
+    #v(3mm)
+    // ── Row 3: Finite-Width Benchmark — plot aside, table + schematics in main column ──
+    #panel([8. Finite-Width Benchmark])[
+      #grid(
+        columns: (1.5fr, 1fr),
+        gutter: 7mm,
+        align(horizon)[
+          #align(center)[#image("../plot/bridge_tc_reference.pdf", width: 100%)]
+        ],
+        [
+          #align(center)[
+            #table(
+              columns: (auto, auto),
+              stroke: (paint: border, thickness: 0.6pt),
+              inset: 4pt,
+              align: center,
+              table.header[*W*][$T_c$],
+              [10 µm], [~8.1 K],
+              [20 µm], [~8.0 K],
+              [∞ (plain film)], [10.99 K],
+            )
           ]
-        ]
-        #v(2mm)
-        #block(
-          width: 100%,
-          fill: blue.lighten(92%),
-          stroke: (paint: blue.lighten(60%), thickness: 0.7pt),
-          radius: 3pt,
-          inset: (x: 8pt, y: 8pt),
-        )[
-          #text(size: 20pt, fill: muted)[All raw data and analysis source code are openly available at: #text(fill: blue)[*github.com/Aerozine/ning*]]
-        ]
-      ],
-    )
+          #v(3mm)
+          #grid(
+            columns: (1fr, 1fr),
+            gutter: 7mm,
+            [
+              #align(center)[#image("images/gds_C1.png", height: 75mm)]
+              #align(center)[#caption([W = 10 µm])]
+            ],
+            [
+              #align(center)[#image("images/gds_D1.png", height: 75mm)]
+              #align(center)[#caption([W = 20 µm])]
+            ],
+          )
+          #align(center)[#caption([Bridge schematic])]
+        ],
+      )
+    ]
+    #v(3mm)
+    // ── Row 4: Conclusions (full width) ──
+    #panel([Conclusions])[
+      #set par(leading: 0.72em)
+      #text(size: 25pt)[$P_(N_2) approx 10%$ yields optimal $T_c = 10.99$ K (zone R#sub[II], δ-NbN).]
+      #v(6pt)
+      #text(size: 25pt)[EBL micro-patterning preserves superconductivity: both bridges remain superconducting with a width-independent $Delta T_c approx 3$ K. The coherence length of NbN is a few nm, so a 10 µm bridge introduces no geometric confinement: the $Delta T_c$ is instead attributed to resist outgassing during NbN deposition.]
+    ]
+    #v(3mm)
+    // ── Row 5: Ack, Data, References stacked ──
+    #block(
+      width: 100%,
+      fill: amber.lighten(88%),
+      stroke: (paint: amber.lighten(55%), thickness: 0.7pt),
+      radius: 4pt,
+      inset: (x: 11pt, y: 10pt),
+    )[
+      #text(size: 25pt, fill: dark)[
+        *Acknowledgements:* *Cyril Delforge* and *Abhishek Naik* provided daily supervision and prepared several NbN samples. *Julia Baumgarten* contributed the bridge transport measurements and $T_c$ vs $P_(N_2)$ data points. *Nicolas Lejeune* retrieved additional $T_c$ measurements.
+      ]
+    ]
+    #v(2mm)
+    #block(
+      width: 100%,
+      fill: blue.lighten(92%),
+      stroke: (paint: blue.lighten(60%), thickness: 0.7pt),
+      radius: 3pt,
+      inset: (x: 8pt, y: 8pt),
+    )[
+      #text(size: 25pt, fill: muted)[Data \& code: #text(fill: blue)[*github.com/Aerozine/ning*]]
+    ]
+    #v(2mm)
+    #panel([References])[
+      #text(size: 25pt, fill: muted)[
+        *[1]* Keskar et al., _Jpn. J. Appl. Phys._ *10* (1971) #linebreak()
+        *[2]* Sugimoto & Motohiro, _Vacuum_ *93* (2013) #linebreak()
+        *[3]* Kalal et al., _J. Alloys Compd._ *851* (2021) #linebreak()
+        *[4]* Glowacka et al., _arXiv:1401.2276_ (2014) #linebreak()
+        *[5]* Gavaler et al., _Physica_ *55* (1971)
+      ]
+      #v(-4pt)
+    ]
   ],
 )
 
